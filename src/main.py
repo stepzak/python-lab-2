@@ -1,20 +1,16 @@
-from src.power import power_function
-from src.constants import SAMPLE_CONSTANT
+import logging
+from src.command_line_session import CommandLineSession
+import src.constants as cst
 
+def main():
+    logging.basicConfig(
+        level=cst.LOGGING_LEVEL,
+        filename=cst.LOG_FILE,
+        format=cst.FORMAT
+    )
+    session = CommandLineSession()
+    session.start_session()
 
-def main() -> None:
-    """
-    Обязательнная составляющая программ, которые сдаются. Является точкой входа в приложение
-    :return: Данная функция ничего не возвращает
-    """
-
-    target, degree = map(int, input("Введите два числа разделенные пробелом: ").split(" "))
-
-    result = power_function(target=target, power=degree)
-
-    print(result)
-
-    print(SAMPLE_CONSTANT)
 
 if __name__ == "__main__":
     main()
