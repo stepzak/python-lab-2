@@ -7,11 +7,11 @@ from pathlib import Path
 import src.constants as cst
 from src.cmd_types.meta import CommandMetadata
 from src.extra import utils
-from src.extra.decorators import command
+import src.decorators.commands_register as cmd_register
 from src.extra.plugins_loader import PluginLoader
 from src.cmd_types.commands import ExecutableCommand
 
-@command("reload-plugins")
+@cmd_register.command("reload-plugins")
 class ReloadPluginsCommand(ExecutableCommand):
     def _parse_args(self):
         print(self.args)

@@ -5,15 +5,15 @@ import shutil
 import stat
 import time
 from pathlib import Path
-import src.extra.decorators as decorators
+import src.decorators.commands_register as cmd_register
+import src.decorators.handlers as handlers
 import src.extra.utils as utils
 import src.cmd_types.commands as cmds
-from src.extra.decorators import handle_not_found
 
 __author__ = "default"
 __version__ = "1.0.0"
 
-@decorators.command("ls")
+@cmd_register.command("ls")
 class LsCommand(cmds.ExecutableCommand):
     def _parse_args(self) -> tuple[Path, bool]:
         args = list(self.args)
@@ -28,7 +28,7 @@ class LsCommand(cmds.ExecutableCommand):
 
         return path, l_flag
 
-    @handle_not_found
+    @handlers.handle_all_default
     def execute(self):
         path, l_flag = self._parse_args()
         out = ""
@@ -46,7 +46,7 @@ class LsCommand(cmds.ExecutableCommand):
                 out += f"{item.name} "
         return out.strip()
 
-@decorators.command("cd")
+@cmd_register.command("cd")
 class CdCommand(cmds.ExecutableCommand):
 
     def _parse_args(self) -> Path:
@@ -61,7 +61,7 @@ class CdCommand(cmds.ExecutableCommand):
 
         return path_obj
 
-    @handle_not_found
+    @handlers.handle_all_default
     def execute(self):
         path = self._parse_args()
         if path.is_dir():
@@ -75,7 +75,7 @@ class CdCommand(cmds.ExecutableCommand):
         raise FileNotFoundError(2, f"Not found: {path}", path)
 
 
-@decorators.command("cat")
+@cmd_register.command("cat")
 class CatCommand(cmds.ExecutableCommand):
 
     def _parse_args(self) -> Path:
@@ -83,7 +83,7 @@ class CatCommand(cmds.ExecutableCommand):
         path_obj = utils.create_path_obj(f)
         return path_obj
 
-    @handle_not_found
+    @handlers.handle_all_default
     def execute(self):
         path_obj = self._parse_args()
         if path_obj.is_dir():
@@ -94,7 +94,7 @@ class CatCommand(cmds.ExecutableCommand):
                 return file.read()
         return None
 
-@decorators.command("cp")
+@cmd_register.command("cp")
 class CopyCommand(cmds.ExecutableCommand):
     def _parse_args(self) -> tuple[Path, Path, bool]:
         args = self.args
@@ -108,7 +108,7 @@ class CopyCommand(cmds.ExecutableCommand):
 
         return source_dir, to_dir, r
 
-    @handle_not_found
+    @handlers.handle_all_default
     def execute(self):
         source_dir, to_dir, r = self._parse_args()
         if source_dir.is_dir():
