@@ -8,33 +8,34 @@ from pathlib import Path
 import src.extra.decorators as decorators
 import src.extra.utils as utils
 import src.cmd_types.commands as cmds
-from src.cmd_types.autocompletes import basic_autocomplete
 from src.extra.decorators import handle_not_found
 
+__author__ = "default"
+__version__ = "1.0.0"
 
 @decorators.command("ls")
 class LsCommand(cmds.ExecutableCommand):
     def _parse_args(self) -> tuple[Path, bool]:
         args = list(self.args)
         no_l = utils.remove_arg("-l", args)
-        l = True
+        l_flag = True
         if len(no_l) == len(args):
-            l = False
+            l_flag = False
         if len(no_l) == 0:
             no_l.insert(0, ".")
         path = Path(no_l[0])
         path = Path.expanduser(path)
 
-        return path, l
+        return path, l_flag
 
     @handle_not_found
     def execute(self):
-        path, l = self._parse_args()
+        path, l_flag = self._parse_args()
         out = ""
         path_iter = path.iterdir()
 
         for item in path_iter:
-            if l:
+            if l_flag:
                 stat_info = item.stat()
                 permissions = stat.filemode(stat_info.st_mode)
                 owner = pwd.getpwuid(stat_info.st_uid).pw_name
@@ -44,10 +45,6 @@ class LsCommand(cmds.ExecutableCommand):
             else:
                 out += f"{item.name} "
         return out.strip()
-
-    @staticmethod
-    def autocomplete(text: str, state: int):
-        return basic_autocomplete(text, state)
 
 @decorators.command("cd")
 class CdCommand(cmds.ExecutableCommand):
@@ -77,9 +74,6 @@ class CdCommand(cmds.ExecutableCommand):
             return None
         raise FileNotFoundError(2, f"Not found: {path}", path)
 
-    @staticmethod
-    def autocomplete(text: str, state: int):
-        return basic_autocomplete(text, state, files = False)
 
 @decorators.command("cat")
 class CatCommand(cmds.ExecutableCommand):
@@ -100,14 +94,10 @@ class CatCommand(cmds.ExecutableCommand):
                 return file.read()
         return None
 
-    @staticmethod
-    def autocomplete(text: str, state: int):
-        return basic_autocomplete(text, state)
-
 @decorators.command("cp")
 class CopyCommand(cmds.ExecutableCommand):
-    def _parse_args(self, *args) -> tuple[Path, Path, bool]:
-        args = list(args)
+    def _parse_args(self) -> tuple[Path, Path, bool]:
+        args = self.args
         no_r = utils.remove_arg("-r", args)
         r = True
         if len(no_r) == len(args):
@@ -130,7 +120,3 @@ class CopyCommand(cmds.ExecutableCommand):
 
         shutil.copy(source_dir, to_dir)
         return None
-
-    @staticmethod
-    def autocomplete(text: str, state: int):
-        return basic_autocomplete(text, state)

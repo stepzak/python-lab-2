@@ -2,8 +2,11 @@ import logging
 from pathlib import Path
 
 
-def log_error(msg: str, logger: logging.Logger) -> None:
+def log_error(msg: str | Exception, logger: logging.Logger, exc = False) -> None:
     print(msg)
+    if exc:
+        logger.exception(msg)
+        return
     logger.error(f"ERROR: {msg}")
 
 def remove_arg(arg: str, args: list) -> list:
@@ -19,7 +22,7 @@ def create_path_obj(path: str, must_exist = True) -> Path:
     if not path_obj.exists() and must_exist:
         raise FileNotFoundError(
             2,
-            f"File not found",
+            "File not found",
             str(path)
         )
     return path_obj

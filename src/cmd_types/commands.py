@@ -23,11 +23,6 @@ class ExecutableCommand(ABC):
     def execute(self):
         """Executes command"""
 
-    @staticmethod
-    @abstractmethod
-    def autocomplete(text: str, state: int) -> list:
-        """Autocompletes command"""
-
 
 class UndoableCommand(ExecutableCommand, ABC):
     @abstractmethod
