@@ -7,3 +7,7 @@ def command(cmd_name: str):
         setattr(cls, 'logger', logging.getLogger(cmd_name))
         return cls
     return decorator
+
+def display_in_help(func):
+    func.__display_help__ = True
+    return func

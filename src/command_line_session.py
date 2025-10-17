@@ -7,26 +7,7 @@ from pathlib import Path
 import src.constants as cst
 from src.cmd_types.meta import CommandMetadata
 from src.extra import utils
-import src.decorators.commands_register as cmd_register
 from src.extra.plugins_loader import PluginLoader
-from src.cmd_types.commands import ExecutableCommand
-
-@cmd_register.command("reload-plugins")
-class ReloadPluginsCommand(ExecutableCommand):
-    def _parse_args(self):
-        print(self.args)
-        if "--strict" in self.args or "-s" in self.args:
-            self.logger.debug("Set strict_load to 'True'")
-            return True
-        self.logger.debug("Set strict_load to 'False'")
-        return False
-
-    def execute(self):
-        strict = self._parse_args()
-        caller_frame = inspect.currentframe().f_back
-        caller_obj: CommandLineSession = caller_frame.f_locals["self"]
-
-        caller_obj.load_modules(strict)
 
 class CommandLineSession:
     def __init__(self, default_wd: str = cst.DEFAULT_PWD,
@@ -73,7 +54,7 @@ class CommandLineSession:
         plugins_loader.load_plugins()
 
         self.cmd_map = plugins_loader.commands
-        self.cmd_map["reload-plugins"] = CommandMetadata("reload-plugins", "default_plugin", "default", "1.0.0", ReloadPluginsCommand)
+        #self.cmd_map["reload-plugins"] = CommandMetadata("reload-plugins", "default_plugin", "default", "1.0.0", ReloadPluginsCommand)
 
     def execute_command(self, line: str):
         args = shlex.split(line)

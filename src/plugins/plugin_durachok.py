@@ -19,3 +19,11 @@ class CommandLs(ExecutableCommand):
 
     def execute(self):
         pass
+
+@command("jk")
+class CommandJk(ExecutableCommand):
+    def _parse_args(self,):
+        raise Exception("Razrabotchik krivorukiy n.2")
+
+    def execute(self):
+        self._parse_args()

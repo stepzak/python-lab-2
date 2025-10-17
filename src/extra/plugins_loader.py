@@ -2,7 +2,9 @@ import importlib
 import inspect
 import logging
 import pkgutil
+import sys
 from sys import stdout
+from typing import Any
 
 import src.constants as cst
 from src.cmd_types.commands import ExecutableCommand, UndoableCommand
@@ -40,7 +42,7 @@ class PluginLoader:
         for k in self.non_default.keys():
             self._load_module(k, False)
 
-    def warn_or_error(self, *, warn_msg: str = "", exc = ImportError):
+    def warn_or_error(self, *, warn_msg: str = "", exc: Any = ImportError):
         if not self.strict:
             self.logger.warning(warn_msg)
 
@@ -52,7 +54,12 @@ class PluginLoader:
         full_module_name = defaults * f'{self.pkg_dir}.' + f"{module_name}"
         if defaults:
             try:
-                module = importlib.import_module(full_module_name)
+                if full_module_name in sys.modules:
+                    module = sys.modules[full_module_name]
+                    importlib.reload(module)
+                    self.logger.debug(f"Module {module} already imported: reloading")
+                else:
+                    module = importlib.import_module(full_module_name)
             except Exception as e:
                 self.warn_or_error(warn_msg=f"Failed to load module {full_module_name}: {e}", exc=e)
                 return
