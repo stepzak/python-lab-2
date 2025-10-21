@@ -57,7 +57,7 @@ class PluginLoader:
                 if full_module_name in sys.modules:
                     module = sys.modules[full_module_name]
                     importlib.reload(module)
-                    self.logger.debug(f"Module {module} already imported: reloading")
+                    self.logger.debug(f"Module {module.__name__} already imported: reloading")
                 else:
                     module = importlib.import_module(full_module_name)
             except Exception as e:
@@ -73,7 +73,7 @@ class PluginLoader:
             module = obj_import.module
             author = obj_import.author
             version = obj_import.version
-        self.logger.debug(f"Loading {defaults*'non-default'} module {full_module_name}...")
+        self.logger.debug(f"Loading {'non-default' if not defaults else 'default'} module {full_module_name}...")
         for name, obj in inspect.getmembers(module):
             if inspect.isclass(obj):
                 if issubclass(obj, ExecutableCommand) and obj not in RESTRICTED:

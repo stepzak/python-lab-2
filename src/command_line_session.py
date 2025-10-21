@@ -1,4 +1,3 @@
-import inspect
 import logging
 import os
 import shlex
@@ -8,9 +7,11 @@ import src.constants as cst
 from src.cmd_types.meta import CommandMetadata
 from src.extra import utils
 from src.extra.plugins_loader import PluginLoader
+from src.plugins.plugin_default import LsCommand
+
 
 class CommandLineSession:
-    def __init__(self, default_wd: str = cst.DEFAULT_PWD,
+    def __init__(self, default_wd: str | Path = cst.DEFAULT_PWD,
                  plugins_dir: str = cst.PLUGINS_DIR,
                  plugins_prefix: str = cst.PLUGINS_PREFIX,
                  strict_load: bool = cst.STRICT_PLUGIN_LOADING
@@ -21,8 +22,13 @@ class CommandLineSession:
         self.plugins_prefix = plugins_prefix
         self.logger = logging.getLogger(__name__)
         self.strict_load = strict_load
+        self.posix = utils.is_posix()
+
+    def shlex_split(self, cmd: str):
+        return shlex.split(cmd, posix=self.posix)
 
     def start_session(self):
+
         self.load_modules()
         default = self.default_wd
         to_move = Path(default).expanduser()
@@ -36,8 +42,12 @@ class CommandLineSession:
                 if res:
                     print(res)
             except Exception as e:
-                name = shlex.split(cmd)[0]
-                cmd_meta = self.cmd_map.get(name)
+                try:
+                    name = self.shlex_split(cmd)[0]
+                    cmd_meta = self.cmd_map.get(name)
+                except ValueError:
+                    name = ''
+                    cmd_meta = CommandMetadata('default', 'default', 'default', '', LsCommand)
                 if cmd_meta.plugin_author != "default":
                     utils.log_error(
                         f"Author of plugin '{cmd_meta.plugin_name}' of version '{cmd_meta.plugin_version}' is a debil(real name - '{cmd_meta.plugin_author}'). His command '{name}' raised an unexpected error:",
@@ -45,7 +55,7 @@ class CommandLineSession:
                     )
                     utils.log_error(e, self.logger, exc=True)
                 else:
-                    raise
+                    utils.log_error(e, self.logger)
 
     def load_modules(self, outer_strict = None):
         if not outer_strict:
@@ -57,7 +67,7 @@ class CommandLineSession:
         #self.cmd_map["reload-plugins"] = CommandMetadata("reload-plugins", "default_plugin", "default", "1.0.0", ReloadPluginsCommand)
 
     def execute_command(self, line: str):
-        args = shlex.split(line)
+        args = self.shlex_split(line)
         if not args:
             return None
         cmd_name = args[0]
@@ -66,13 +76,16 @@ class CommandLineSession:
         else:
             cmd_args = args[1:]
 
-        if "-h" in args or "--help" in args:
-            return "Help placeholder..." #TODO: -h, --help keys
+        if "--help" in args:
+            return "Help placeholder..." #TODO: --help keys
 
         cmd_meta = self.cmd_map.get(cmd_name)
         if not cmd_meta:
+            utils.write_history(line)
             utils.log_error(f"{args[0]}: command not found", self.logger)
             return None
 
         self.logger.info(line)
-        return cmd_meta.cmd(args=cmd_args).execute()
+        cmd_obj = cmd_meta.cmd(args = cmd_args)
+        cmd_obj.history()
+        return cmd_obj.execute()

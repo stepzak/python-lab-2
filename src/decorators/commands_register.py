@@ -8,6 +8,10 @@ def command(cmd_name: str):
         return cls
     return decorator
 
-def display_in_help(func):
-    func.__display_help__ = True
-    return func
+def display_in_help(name: str | None = None):
+    def decorator(func):
+        func.__display_help__ = True
+        if name:
+            func.__help_name__ = name
+        return func
+    return decorator

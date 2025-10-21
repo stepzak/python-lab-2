@@ -1,6 +1,4 @@
-import errno
 import inspect
-import shutil
 from functools import wraps
 
 from src.extra.utils import log_error
@@ -12,6 +10,12 @@ def get_cls_caller(func):
         if not getattr(self, 'logger', None):
             requires_self = False
             caller_frame = inspect.currentframe().f_back
+            while not (
+                    getattr(caller_frame.f_locals.get('self', {}),
+                            "logger",
+                            None)
+            ):
+                caller_frame = caller_frame.f_back
             args = list(args)
             args.insert(0, self)
             self = caller_frame.f_locals["self"]

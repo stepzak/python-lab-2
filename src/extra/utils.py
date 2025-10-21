@@ -1,6 +1,7 @@
 import logging
+import os
 from pathlib import Path
-
+import src.constants as cst
 
 def log_error(msg: str | Exception, logger: logging.Logger, exc = False) -> None:
     print(msg)
@@ -26,3 +27,12 @@ def create_path_obj(path: str, must_exist = True) -> Path:
             str(path)
         )
     return path_obj
+
+def write_history(obj: str):
+    if not cst.HISTORY_PATH.exists():
+        cst.HISTORY_PATH.touch()
+    with open(cst.HISTORY_PATH, "a") as f:
+        f.write(f"{obj}\n")
+
+def is_posix():
+    return os.name == "posix"

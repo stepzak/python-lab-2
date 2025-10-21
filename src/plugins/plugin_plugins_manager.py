@@ -20,10 +20,12 @@ class PluginsCommand(ExecutableCommand):
 
         return no_strict[-1], strict
 
+    @cmd_register.display_in_help()
     def extra_long_title_that_does_nothing(self):
+        """Bla bla bla"""
         return
 
-    @cmd_register.display_in_help
+    @cmd_register.display_in_help()
     def reload(self, strict):
         """Reloads plugins. --strict to raise error when failed to import"""
 

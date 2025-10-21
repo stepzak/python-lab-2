@@ -1,6 +1,8 @@
 import inspect
 import logging
 from abc import ABC, abstractmethod
+from types import FrameType
+
 from src.extra import utils
 import src.decorators.commands_register as cmd_register
 
@@ -16,7 +18,20 @@ class ExecutableCommand(ABC):
 
     def _log_error(self, msg):
         """Logs an error"""
-        utils.log_error(msg, logger=self.logger)
+        utils.log_error(self.name+": "+msg, logger=self.logger)
+
+    def exec(self, line: str):
+        """Executes a line in terminal. Be cautious"""
+        cur_frame = inspect.currentframe()
+        f_back = cur_frame.f_back #type: ignore
+        while not getattr(f_back.f_locals["self"], 'execute_command', None): #type: ignore
+
+            f_back = f_back.f_back #type: ignore
+            if not f_back:
+                break
+        if f_back:
+            return f_back.f_locals["self"].execute_command(line) #type: ignore
+        return None
 
     @abstractmethod
     def _parse_args(self, *args):
@@ -26,7 +41,7 @@ class ExecutableCommand(ABC):
     def execute(self):
         """Executes command"""
 
-    @cmd_register.display_in_help
+    @cmd_register.display_in_help()
     def help(self, *args, **kwargs):
 
         """Display this message"""
@@ -35,7 +50,9 @@ class ExecutableCommand(ABC):
         for name, obj in inspect.getmembers(self):
             if inspect.ismethod(obj) and not name.startswith("__"):
                 if getattr(obj, "__display_help__", False):
-                    outs.append((name, getattr(obj, "__doc__", "")))
+                    name_to_append = getattr(obj, "__help_name__", None) or name
+                    doc = getattr(obj, "__doc__", "")
+                    outs.append((name_to_append, doc))
         output = ""
         max_len_tup = max(outs, key=lambda x: len(x[0]))
         max_len = len(max_len_tup[0])
@@ -43,6 +60,11 @@ class ExecutableCommand(ABC):
             output += out[0] + " " * (max_len - len(out[0])) + 2 * "\t" + out[1] + "\n"
 
         return output
+
+    def history(self):
+        """Write to history"""
+        line = ' '.join([self.name]+self.args)
+        utils.write_history(line)
 
 
 class UndoableCommand(ExecutableCommand, ABC):
