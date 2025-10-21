@@ -1,10 +1,11 @@
 import logging
 
 
-def command(cmd_name: str):
+def command(cmd_name: str, flags: list[str] | None = None):
     def decorator(cls):
         setattr(cls, 'name', cmd_name)
         setattr(cls, 'logger', logging.getLogger(cmd_name))
+        setattr(cls, 'flags', flags)
         return cls
     return decorator
 

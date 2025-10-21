@@ -1,24 +1,19 @@
 import inspect
-import src.extra.utils as utils
 from src.cmd_types.commands import ExecutableCommand
 from src.decorators import commands_register as cmd_register
 
 __author__ = "default"
 __version__ = "1.0.0"
 
-@cmd_register.command("plugins")
+@cmd_register.command("plugins", flags=["-s"])
 class PluginsCommand(ExecutableCommand):
     def _parse_args(self):
-        no_strict = utils.remove_arg("--strict", self.args)
-        no_strict = utils.remove_arg("-s", no_strict)
-        strict = False
-        if len(no_strict) < len(self.args):
-            strict = True
-
-        if not no_strict:
+        flags = self.parse_flags()
+        strict = flags["-s"]
+        if not self.args:
             return "help", strict
 
-        return no_strict[-1], strict
+        return self.args[-1], strict
 
     @cmd_register.display_in_help()
     def extra_long_title_that_does_nothing(self):

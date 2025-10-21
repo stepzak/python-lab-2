@@ -1,5 +1,6 @@
 import logging
 import os
+import shutil
 from pathlib import Path
 import src.constants as cst
 
@@ -36,3 +37,10 @@ def write_history(obj: str):
 
 def is_posix():
     return os.name == "posix"
+
+def get_terminal_dimensions():
+    try:
+        size = shutil.get_terminal_size()
+        return size.columns, size.lines
+    except OSError:
+        return 80, 24

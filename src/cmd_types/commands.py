@@ -9,6 +9,7 @@ class ExecutableCommand(ABC):
 
     logger: logging.Logger
     name: str
+    flags: list | None
 
     def __init__(self, args: list[str]):
         self.args = args
@@ -17,6 +18,16 @@ class ExecutableCommand(ABC):
     def _log_error(self, msg):
         """Logs an error"""
         utils.log_error(self.name+": "+msg, logger=self.logger)
+
+    def parse_flags(self) -> dict[str, bool]:
+        parsed_flags = {}
+        if self.flags:
+            for flag in self.flags:
+                no_flag = utils.remove_arg(flag, self.args)
+                parsed_flags[flag] = (len(self.args) != len(no_flag))
+                self.args = no_flag
+
+        return parsed_flags
 
     def exec(self, line: str):
         """Executes a line in terminal. Be cautious"""

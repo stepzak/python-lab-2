@@ -2,6 +2,7 @@ import grp
 import inspect
 import os
 import pwd
+import shlex
 import shutil
 import stat
 import time
@@ -22,28 +23,21 @@ def get_resolved_line(args: list[str]) -> str:
         line += f" {create_path_obj(arg, must_exist=False).resolve()}"
     return line
 
-@cmd_register.command("ls")
+@cmd_register.command("ls", flags = ["-l"])
 class LsCommand(cmds.ExecutableCommand):
-    def _parse_args(self) -> tuple[list[Path], bool]:
-        args = list(self.args)
-        no_l = utils.remove_arg("-l", args)
-
+    def _parse_args(self) -> tuple[list[Path], dict[str, bool]]:
+        flags = self.parse_flags()
         ret = []
-
-        l_flag = True
-        if len(no_l) == len(args):
-            l_flag = False
-        if len(no_l) == 0:
-            no_l.insert(0, ".")
-        for arg in no_l:
+        for arg in self.args:
             ret.append(create_path_obj(arg, must_exist=False))
-
-        return ret, l_flag
+        if not ret:
+            ret.append(create_path_obj("."))
+        return ret, flags
 
     def execute(self):
-        paths, l_flag = self._parse_args()
+        paths, flags = self._parse_args()
         out = ""
-
+        l_flag = flags["-l"]
         @handlers.handle_all_default
         def file_info(item: Path):
             output = ""
@@ -59,14 +53,16 @@ class LsCommand(cmds.ExecutableCommand):
                 output += f"{permissions} {stat_info.st_nlink:>2} {owner} {group} {stat_info.st_size:>8} {time.strftime('%b %d %H:%M', time.gmtime(stat_info.st_mtime))} {name} \n"
 
             else:
-                output += f"{name} "
+                output+=f"{name} "
+
             return output
 
 
         @handlers.handle_all_default
         def list_dir(path: Path):
             output = ""
-
+            col = utils.get_terminal_dimensions()[0]
+            len_counter = 0
             if path.is_file():
                 return file_info(path)
 
@@ -75,13 +71,21 @@ class LsCommand(cmds.ExecutableCommand):
             path_iter = path.iterdir()
 
             for item in path_iter:
-                output += file_info(item)
+
+                add = file_info(item)
+                if not l_flag:
+                    len_counter += len(add)
+                    if len_counter > col:
+                        len_counter = len(add)
+                        add = "\n" + add
+                output += add
 
             return output+"\n\n"
 
         for arg in paths:
             add = list_dir(arg)
             if add:
+
                 out = out + add
 
         return out.strip()
@@ -141,24 +145,23 @@ class CatCommand(cmds.ExecutableCommand):
                 return file.read()
         return None
 
-@cmd_register.command("cp")
+@cmd_register.command("cp", flags = ["-r"])
 class CopyCommand(cmds.ExecutableCommand):
-    def _parse_args(self) -> tuple[list[Path], Path, bool]:
+    def _parse_args(self) -> tuple[list[Path], Path, dict[str, bool]]:
+        flags = self.parse_flags()
         args = self.args
-        no_r = utils.remove_arg("-r", args)
-        r = True
-        if len(no_r) == len(args):
-            r = False
-        if len(no_r)<2:
+        if len(args)<2:
             self._log_error("too few arguments")
             print("'cp --help' to get more info")
-        source_dirs = [utils.create_path_obj(o, must_exist=False) for o in no_r[:-1]]
-        to_dir = utils.create_path_obj(no_r[-1], must_exist=False).expanduser()
+        source_dirs = [utils.create_path_obj(o, must_exist=False) for o in args[:-1]]
+        to_dir = utils.create_path_obj(args[-1], must_exist=False).expanduser()
 
-        return source_dirs, to_dir, r
+        return source_dirs, to_dir, flags
 
     def execute(self):
-        source_dirs, to_dir, r = self._parse_args()
+        source_dirs, to_dir, flags = self._parse_args()
+
+        r = flags["-r"]
 
         @handlers.handle_all_default
         def copy(source: Path, to: Path):
@@ -234,21 +237,18 @@ class MoveCommand(cmds.ExecutableCommand):
             undo_(p)
 
 
-@cmd_register.command("rm")
+@cmd_register.command("rm", flags = ["-r"])
 class RemoveCommand(cmds.UndoableCommand):
-    def _parse_args(self) -> tuple[list[Path], bool]:
+    def _parse_args(self) -> tuple[list[Path], dict[str, bool]]:
         ret = []
-        no_r = utils.remove_arg("-r", self.args)
-        r_flag = False
-        if len(no_r)<len(self.args):
-            r_flag = True
-        for arg in no_r:
+        flags = self.parse_flags()
+        for arg in self.args:
             try:
                 ret.append(create_path_obj(arg).resolve())
             except FileNotFoundError:
                 self._log_error(f"Cannot remove '{arg}': no such file or directory")
 
-        return ret, r_flag
+        return ret, flags
 
     def history(self):
         line = self.name
@@ -258,7 +258,8 @@ class RemoveCommand(cmds.UndoableCommand):
         utils.write_history(line)
 
     def execute(self):
-        args, r_flag = self._parse_args()
+        args, flags = self._parse_args()
+        r_flag = flags["-r"]
         home = os.getenv("HOME")+"/"
         @handlers.handle_all_default
         def remove(path: Path):
@@ -396,4 +397,8 @@ class ExitCommand(cmds.ExecutableCommand):
 
     def execute(self):
         code = self._parse_args()
+
+        shutil.rmtree(cst.TRASH_PATH)
+        cst.TRASH_PATH.mkdir(parents=True, exist_ok=True)
+
         return exit(code)
