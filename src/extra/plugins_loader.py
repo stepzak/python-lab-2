@@ -76,7 +76,7 @@ class PluginLoader:
         self.logger.debug(f"Loading {'non-default' if not defaults else 'default'} module {full_module_name}...")
         for name, obj in inspect.getmembers(module):
             if inspect.isclass(obj):
-                if issubclass(obj, ExecutableCommand) and obj not in RESTRICTED:
+                if issubclass(obj, ExecutableCommand) and obj not in RESTRICTED and getattr(obj, "name", None):
                     cmd_name = obj.name
                     if self.commands.get(cmd_name):
 

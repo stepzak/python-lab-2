@@ -14,3 +14,8 @@ STRICT_PLUGIN_LOADING: bool = False
 
 HISTORY_PATH: Path = Path(DEFAULT_PWD) / ".history"
 TRASH_PATH: Path = Path(DEFAULT_PWD) / ".trash"
+
+TYPE_EXTENSION_ENUM: dict[str, str] = {
+            "gztar": "tar.gz",
+            "zip": "zip"
+        }

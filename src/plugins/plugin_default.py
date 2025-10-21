@@ -47,15 +47,19 @@ class LsCommand(cmds.ExecutableCommand):
         @handlers.handle_all_default
         def file_info(item: Path):
             output = ""
+            name = item.name
+            if str(item).find(" ")!=-1:
+                name = f'"{name}"'
+
             if l_flag:
                 stat_info = item.stat()
                 permissions = stat.filemode(stat_info.st_mode)
                 owner = pwd.getpwuid(stat_info.st_uid).pw_name
                 group = grp.getgrgid(stat_info.st_gid).gr_name
-                output += f"{permissions} {stat_info.st_nlink:>2} {owner} {group} {stat_info.st_size:>8} {time.strftime('%b %d %H:%M', time.gmtime(stat_info.st_mtime))} {item.name} \n"
+                output += f"{permissions} {stat_info.st_nlink:>2} {owner} {group} {stat_info.st_size:>8} {time.strftime('%b %d %H:%M', time.gmtime(stat_info.st_mtime))} {name} \n"
 
             else:
-                output += f"{item.name} "
+                output += f"{name} "
             return output
 
 
@@ -220,9 +224,14 @@ class MoveCommand(cmds.ExecutableCommand):
 
     def undo(self):
         source = Path(self.args.pop())
-        for arg in self.args:
+
+        @handlers.handle_all_default
+        def undo_(arg: str):
             move_from = source / Path(arg).name
             shutil.move(move_from, arg)
+
+        for p in self.args:
+            undo_(p)
 
 
 @cmd_register.command("rm")
@@ -276,24 +285,37 @@ class RemoveCommand(cmds.UndoableCommand):
 
                 perm = input(f"Do you want to remove '{path}'? [y/n] ")
                 if perm.lower() == "y":
-                    shutil.move(path, to_move)
+                    if not (to_move / path.name).exists():
+                        shutil.move(path, to_move)
+                    else:
+                        shutil.rmtree(to_move)
+                        shutil.move(path, to_move)
                 else:
                     self.logger.warning(f"'{path}' was not removed: user declined operation")
                 return
 
             else:
-                shutil.move(path, to_move)
+                if not (to_move / path.name).exists():
+                    shutil.move(path, to_move)
+                else:
+                    (to_move/path.name).unlink()
+                    shutil.move(path, to_move)
 
         for arg in args:
             remove(arg)
 
     def undo(self):
         home = os.environ.get("HOME")+"/"
-        for arg in self.args:
+
+        @handlers.handle_all_default
+        def undo_(arg: str):
             no_home = str(arg).replace(home, "")
             source = Path(cst.TRASH_PATH) / no_home
             self.logger.info(f"Undoing 'rm {arg}")
             shutil.move(source, arg)
+
+        for p in self.args:
+            undo_(p)
 
 
 @cmd_register.command("history")
@@ -306,6 +328,7 @@ class HistoryCommand(cmds.ExecutableCommand):
                 self._log_error(f"{self.args[0]} is not an integer")
         return None
 
+    @handlers.handle_all_default
     def execute(self):
         n = self._parse_args()
         with open(cst.HISTORY_PATH, "r") as file:
@@ -359,3 +382,18 @@ class UndoCommand(cmds.ExecutableCommand):
             with open(cst.HISTORY_PATH, "w") as file:
                 for line in history_rev[:num_to_delete]+history_rev[num_to_delete+1:]:
                     file.write(line)
+
+@cmd_register.command("exit")
+class ExitCommand(cmds.ExecutableCommand):
+    def _parse_args(self) -> int | None:
+        if not self.args:
+            return 0
+        try:
+            return int(self.args[0])
+        except ValueError:
+            self._log_error(f"{self.args[0]} is not an integer")
+            return None
+
+    def execute(self):
+        code = self._parse_args()
+        return exit(code)

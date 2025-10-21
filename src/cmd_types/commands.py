@@ -1,8 +1,6 @@
 import inspect
 import logging
 from abc import ABC, abstractmethod
-from types import FrameType
-
 from src.extra import utils
 import src.decorators.commands_register as cmd_register
 
