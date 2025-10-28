@@ -1,9 +1,6 @@
 from src.cmd_types.commands import ExecutableCommand
 from src.decorators.commands_register import command
 
-__author__ = "krivoruchka"
-__version__ = "0.1.0"
-
 @command("xd")
 class CommandXD(ExecutableCommand):
     def _parse_args(self, *args):

@@ -2,7 +2,7 @@ import grp
 import inspect
 import os
 import pwd
-import shlex
+import re
 import shutil
 import stat
 import time
@@ -42,11 +42,14 @@ class LsCommand(cmds.ExecutableCommand):
         def file_info(item: Path):
             output = ""
             name = item.name
+            if item.name.startswith("."):
+                return ''
             if str(item).find(" ")!=-1:
                 name = f'"{name}"'
 
             if l_flag:
                 stat_info = item.stat()
+
                 permissions = stat.filemode(stat_info.st_mode)
                 owner = pwd.getpwuid(stat_info.st_uid).pw_name
                 group = grp.getgrgid(stat_info.st_gid).gr_name
@@ -71,7 +74,6 @@ class LsCommand(cmds.ExecutableCommand):
             path_iter = path.iterdir()
 
             for item in path_iter:
-
                 add = file_info(item)
                 if not l_flag:
                     len_counter += len(add)
@@ -129,21 +131,29 @@ class CdCommand(cmds.ExecutableCommand):
 @cmd_register.command("cat")
 class CatCommand(cmds.ExecutableCommand):
 
-    def _parse_args(self) -> Path:
-        f = self.args[0]
-        path_obj = utils.create_path_obj(f)
-        return path_obj
+    def _parse_args(self) -> list[Path]:
+        if len(self.args)==0:
+            return []
+        ret = []
+        for arg in self.args:
+            ret.append(create_path_obj(arg, must_exist=False))
+        return ret
 
     @handlers.handle_all_default
     def execute(self):
-        path_obj = self._parse_args()
-        if path_obj.is_dir():
-            msg = f"{path_obj}: is is a directory"
-            self._log_error(msg)
-        elif path_obj.is_file():
-            with open(path_obj, "r") as file:
-                return file.read()
-        return None
+        paths = self._parse_args()
+        output = ""
+        if not paths:
+            self._log_error("too few arguments")
+            return None
+        for path_obj in paths:
+            if path_obj.is_dir():
+                msg = f"{path_obj}: is is a directory"
+                self._log_error(msg)
+            elif path_obj.is_file():
+                with open(path_obj, "r") as file:
+                    output+= file.read()+"\n"
+        return output
 
 @cmd_register.command("cp", flags = ["-r"])
 class CopyCommand(cmds.ExecutableCommand):
@@ -275,6 +285,8 @@ class RemoveCommand(cmds.UndoableCommand):
             parent = Path(no_home).parent
             if parent!=Path("/"):
                 to_move = Path(cst.TRASH_PATH) / parent
+                if not to_move.exists():
+                    to_move.mkdir(parents=True)
 
             else:
                 to_move = Path(cst.TRASH_PATH)
@@ -297,10 +309,10 @@ class RemoveCommand(cmds.UndoableCommand):
 
             else:
                 if not (to_move / path.name).exists():
-                    shutil.move(path, to_move)
+                    shutil.move(path, to_move / path.name)
                 else:
                     (to_move/path.name).unlink()
-                    shutil.move(path, to_move)
+                    shutil.move(path, to_move / path.name)
 
         for arg in args:
             remove(arg)
@@ -318,6 +330,48 @@ class RemoveCommand(cmds.UndoableCommand):
         for p in self.args:
             undo_(p)
 
+
+@cmd_register.command("grep", flags = ["-i", "-r", "-ir"])
+class GrepCommand(cmds.ExecutableCommand):
+    def _parse_args(self):
+        flags = self.parse_flags()
+        if len(self.args)<2:
+            self._log_error("too few arguments")
+            return None
+        f = create_path_obj(self.args[-1])
+        if flags["-ir"]:
+            flags["-i"] = flags["-r"] = True
+        return f, self.args[0], flags
+
+    @handlers.handle_all_default
+    def execute(self):
+        path_arg, regexp, flags = self._parse_args()
+        flags_re = 0
+        if flags["-i"]:
+            flags_re |= re.IGNORECASE
+        try:
+            compiled = re.compile(regexp, flags_re)
+        except re.PatternError:
+            self._log_error(f"Invalid regular expression '{regexp}'")
+        @handlers.handle_all_default
+        def grep(path: Path):
+            out = ""
+            if path.is_dir():
+                if not flags["-r"]:
+                    self._log_error(f"'-r' flag was not specified: '{path}' is ignored")
+                    return None
+                for p in path.iterdir():
+                    out+=grep(p)
+            elif path.is_file():
+                with open(path, "r") as f:
+                    for n, line in enumerate(f.readlines(), start = 1):
+                        match_found = bool(compiled.search(line))
+                        if match_found:
+                            line = line.rstrip('\n\r')
+                            out+=f"{str(path)}\t {n} {line}\n"
+            return out
+        output = grep(path_arg)
+        return output
 
 @cmd_register.command("history")
 class HistoryCommand(cmds.ExecutableCommand):

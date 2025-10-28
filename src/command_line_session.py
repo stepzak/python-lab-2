@@ -41,6 +41,10 @@ class CommandLineSession:
                 res = self.execute_command(cmd)
                 if res:
                     print(res)
+
+            except ImportError:
+                raise
+
             except Exception as e:
                 try:
                     name = self.shlex_split(cmd)[0]
