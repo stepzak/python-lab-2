@@ -3,6 +3,11 @@ from src.command_line_session import CommandLineSession
 import src.constants as cst
 
 def main():
+    """
+    Entry point for application
+
+    :return:
+    """
     logging.basicConfig(
         level=cst.LOGGING_LEVEL,
         filename=cst.LOG_FILE,

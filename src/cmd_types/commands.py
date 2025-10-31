@@ -1,3 +1,5 @@
+"""Commands abstract classes defined here."""
+
 import inspect
 import logging
 from abc import ABC, abstractmethod
@@ -8,20 +10,39 @@ import src.decorators.commands_register as cmd_register
 
 
 class ExecutableCommand(ABC):
+    """
+    Abstract class for executable commands(has no undo method)
+    :param args: list of arguments passed to the command
+    :type args: list[str]
+    """
 
     logger: logging.Logger
+
     name: str
+    """Name of the command"""
+
     flags: list | None
+    """Flags names to parse(with '-' in front)"""
 
     def __init__(self, args: list[str]):
         self.args = args
+        """List of arguments passed to the command"""
 
 
     def _log_error(self, msg):
-        """Logs an error"""
+        """
+        Logs an error in format {name}: {msg}
+        :param msg: error message
+        :type msg: str
+        """
         utils.log_error(self.name+": "+msg, logger=self.logger)
 
     def parse_flags(self) -> dict[str, bool]:
+        """
+        Parse the flags passed in the args
+        :return: dict of {flag: True/False}
+        :rtype: dict[str, bool]
+        """
         parsed_flags = {}
         if self.flags:
             for flag in self.flags:
@@ -32,7 +53,11 @@ class ExecutableCommand(ABC):
         return parsed_flags
 
     def exec(self, line: str):
-        """Executes a line in terminal. Be cautious"""
+        """
+        Executes a line in terminal. Be cautious
+        :param line: line to execute
+        :type line: str
+        """
         cur_frame = inspect.currentframe()
         f_back = cur_frame.f_back #type: ignore
         while not getattr(f_back.f_locals["self"], 'execute_command', None): #type: ignore
@@ -45,7 +70,7 @@ class ExecutableCommand(ABC):
         return None
 
     @abstractmethod
-    def _parse_args(self, *args):
+    def _parse_args(self):
         """Parses command line arguments"""
 
     @abstractmethod
@@ -73,16 +98,30 @@ class ExecutableCommand(ABC):
         return output
 
     @handlers.handle_all_default
-    def handled_run(self):
+    def handled_run(self) -> str:
+        """
+        Runs a command with exception handlers, registered by default.
+        You may create your own abstract class with this method overriden
+
+        :return: command execution result
+        :rtype: str
+        """
         return self.execute()
 
     def history(self):
-        """Write to history"""
+        """
+        Writes command to history file
+        """
         line = ' '.join([self.name]+self.args)
         utils.write_history(line)
 
 
 class UndoableCommand(ExecutableCommand, ABC):
+
+    """
+    Abstract class for undoable commands(fields of ExecutableCommand are included)
+    """
+
     @abstractmethod
     def undo(self):
         """Undoes command"""

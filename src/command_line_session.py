@@ -13,6 +13,23 @@ from src.plugins.plugin_default import LsCommand
 HANDLED_ERRORS = tuple(cst.ERROR_HANDLERS_MESSAGES_FORMATS.keys())
 
 class CommandLineSession:
+
+    """
+    IO stream handler.
+
+    :param default_wd: Default working directory.
+    :type default_wd: str | Path
+
+    :param plugins_dir: Directory to look for plugins.
+    :type plugins_dir: str | Path
+
+    :param plugins_prefix: Prefix that plugins file must start with
+    :type plugins_prefix: str
+
+    :param strict_load: If set to False, will not raise any error while importing plugins
+    :type strict_load: bool
+    """
+
     def __init__(self, default_wd: str | Path = cst.DEFAULT_PWD,
                  plugins_dir: str = cst.PLUGINS_DIR,
                  plugins_prefix: str = cst.PLUGINS_PREFIX,
@@ -20,17 +37,31 @@ class CommandLineSession:
                  ):
         self.default_wd = default_wd or "."
         self.cmd_map: dict[str, CommandMetadata] = {}
+        """Map of commands names to its metadata."""
+
         self.plugins_dir = plugins_dir
         self.plugins_prefix = plugins_prefix
         self.logger = logging.getLogger(__name__)
         self.strict_load = strict_load
-        self.posix = utils.is_posix()
 
-    def shlex_split(self, cmd: str):
+        self.posix = utils.is_posix()
+        """Is system posix"""
+
+    def shlex_split(self, cmd: str) -> list[str]:
+        """
+        Splits a line like bash does(with passed posix param)
+        :param cmd: Input line(command)
+        :return: List of split: command name is the first element, the next ones are args
+        """
         return shlex.split(cmd, posix=self.posix)
 
     @staticmethod
-    def fetch_name_and_args(splitted: list):
+    def fetch_name_and_args(splitted: list) -> tuple[str, list[str]]:
+        """
+        Gets command name and args from shlex split line
+        :param splitted: shlex split line
+        :return: command name, args
+        """
         if not splitted:
             return '', []
         cmd_name = splitted[0]
@@ -39,7 +70,10 @@ class CommandLineSession:
         return cmd_name, splitted[1:]
 
     def start_session(self):
-
+        """
+        Starts an infinite loop of commandline session
+        :return: None
+        """
         self.load_modules()
         default = self.default_wd
         to_move = Path(default).expanduser()
@@ -72,7 +106,15 @@ class CommandLineSession:
                 else:
                     utils.log_error(e, self.logger)
 
-    def load_modules(self, outer_strict = None):
+    def load_modules(self, outer_strict: bool = False):
+        """
+        Loads plugins
+        :param outer_strict: if method was called out of class, will be more prioritized than self.strict_load
+        :type outer_strict: bool
+
+        :return: None
+        """
+
         if not outer_strict:
             outer_strict = self.strict_load
         plugins_loader = PluginLoader(self.plugins_dir, self.plugins_prefix, outer_strict)
@@ -81,7 +123,12 @@ class CommandLineSession:
         self.cmd_map = plugins_loader.commands
         #self.cmd_map["reload-plugins"] = CommandMetadata("reload-plugins", "default_plugin", "default", "1.0.0", ReloadPluginsCommand)
 
-    def parse_line(self, line: str):
+    def parse_line(self, line: str) -> tuple[str, list[str]] | None:
+        """
+        Parses input line by calling self.shlex_split and self.fetch_name_and_args
+        :param line: Input line
+        :return: command name, args | None, if line was empty
+        """
         args = self.shlex_split(line)
         if not args:
             return None
@@ -90,6 +137,11 @@ class CommandLineSession:
         return cmd_name, cmd_args
 
     def execute_command(self, line: str):
+        """
+        Executes input command
+        :param line:
+        :return: Result of command(None, if error occurred or command was not found)
+        """
         parsed = self.parse_line(line)
         if not parsed:
             return None
