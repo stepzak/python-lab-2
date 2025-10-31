@@ -52,7 +52,7 @@ class ExecutableCommand(ABC):
     def execute(self):
         """Executes command"""
 
-    @cmd_register.display_in_help()
+    @cmd_register.display_in_help("--help")
     def help(self, *args, **kwargs):
 
         """Display this message"""

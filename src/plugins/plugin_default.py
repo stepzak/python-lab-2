@@ -143,13 +143,25 @@ class CatCommand(cmds.ExecutableCommand):
         if not paths:
             self._log_error("too few arguments")
             return None
-        for path_obj in paths:
-            if path_obj.is_dir():
-                msg = f"{path_obj}: is is a directory"
+
+        @handlers.handle_all_default
+        def read_file(path: Path):
+            if path.is_dir():
+                msg = f"{path}: is is a directory"
                 self._log_error(msg)
-            elif path_obj.is_file():
-                with open(path_obj, "r") as file:
-                    output+= file.read()+"\n"
+                return ''
+            elif path.is_file():
+                try:
+                    with open(path, "r", encoding='utf-8') as file:
+                        return file.read()+"\n"
+                except Exception as e:
+                    print(e)
+                    self._log_error(f"unable to read {path}")
+
+            return ''
+
+        for arg in paths:
+            output += read_file(arg)
         return output
 
 @cmd_register.command("cp", flags = ["-r"])
@@ -212,7 +224,7 @@ class MoveCommand(cmds.ExecutableCommand):
         args = self.args
 
         source_dirs = [utils.create_path_obj(o) for o in args[:-1]]
-        to_dir = utils.create_path_obj(args[-1])
+        to_dir = utils.create_path_obj(args[-1], must_exist=False)
 
         return source_dirs, to_dir
 
@@ -280,10 +292,11 @@ class RemoveCommand(cmds.UndoableCommand):
                 return
             no_home = str(path).replace(home, "")
             parent = Path(no_home).parent
-            if parent!=Path("/"):
-                to_move = Path(cst.TRASH_PATH) / parent
-                if not to_move.exists():
-                    to_move.mkdir(parents=True)
+            if str(parent)[0]=="/":
+                parent = Path(str(parent)[1:])
+            to_move = Path(cst.TRASH_PATH) / parent
+            if not to_move.exists():
+                to_move.mkdir(parents=True)
 
             else:
                 to_move = Path(cst.TRASH_PATH)
@@ -359,7 +372,7 @@ class GrepCommand(cmds.ExecutableCommand):
                 for p in path.iterdir():
                     out+=grep(p)
             elif path.is_file():
-                with open(path, "r") as f:
+                with open(path, "r", encoding='utf-8') as f:
                     for n, line in enumerate(f.readlines(), start = 1):
                         match_found = bool(compiled.search(line))
                         if match_found:
@@ -381,7 +394,7 @@ class HistoryCommand(cmds.ExecutableCommand):
 
     def execute(self):
         n = self._parse_args()
-        with open(cst.HISTORY_PATH, "r") as file:
+        with open(cst.HISTORY_PATH, "r", encoding='utf-8') as file:
             out = ""
             rev = file.readlines()
             if not n:
@@ -411,7 +424,7 @@ class UndoCommand(cmds.ExecutableCommand):
             )
         )
 
-        with open(cst.HISTORY_PATH, "r") as file:
+        with open(cst.HISTORY_PATH, "r", encoding='utf-8') as file:
             history = file.readlines()
             history_rev = history[::-1]
         num_to_delete = None
@@ -429,7 +442,7 @@ class UndoCommand(cmds.ExecutableCommand):
                     self._log_error(f"{e}: {hist}")
                     continue
         if num_to_delete:
-            with open(cst.HISTORY_PATH, "w") as file:
+            with open(cst.HISTORY_PATH, "w", encoding='utf-8') as file:
                 for line in history_rev[:num_to_delete]+history_rev[num_to_delete+1:]:
                     file.write(line)
 

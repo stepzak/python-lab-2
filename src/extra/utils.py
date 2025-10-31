@@ -32,7 +32,7 @@ def create_path_obj(path: str, must_exist = True) -> Path:
 def write_history(obj: str):
     if not cst.HISTORY_PATH.exists():
         cst.HISTORY_PATH.touch()
-    with open(cst.HISTORY_PATH, "a") as f:
+    with open(cst.HISTORY_PATH, "a", encoding='utf-8') as f:
         f.write(f"{obj}\n")
 
 def is_posix():

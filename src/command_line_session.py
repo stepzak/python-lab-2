@@ -5,12 +5,12 @@ import readline #type: ignore
 from pathlib import Path
 import src.constants as cst
 from src.cmd_types.meta import CommandMetadata
-from src.decorators.handlers import HANDLED_ERRORS
 from src.extra import utils
 from src.extra.plugins_loader import PluginLoader
 from src.extra.utils import log_error
 from src.plugins.plugin_default import LsCommand
 
+HANDLED_ERRORS = tuple(cst.ERROR_HANDLERS_MESSAGES_FORMATS.keys())
 
 class CommandLineSession:
     def __init__(self, default_wd: str | Path = cst.DEFAULT_PWD,
@@ -28,6 +28,15 @@ class CommandLineSession:
 
     def shlex_split(self, cmd: str):
         return shlex.split(cmd, posix=self.posix)
+
+    @staticmethod
+    def fetch_name_and_args(splitted: list):
+        if not splitted:
+            return '', []
+        cmd_name = splitted[0]
+        if len(splitted) < 2:
+            return cmd_name, []
+        return cmd_name, splitted[1:]
 
     def start_session(self):
 
@@ -72,30 +81,35 @@ class CommandLineSession:
         self.cmd_map = plugins_loader.commands
         #self.cmd_map["reload-plugins"] = CommandMetadata("reload-plugins", "default_plugin", "default", "1.0.0", ReloadPluginsCommand)
 
-
-
-    def execute_command(self, line: str):
+    def parse_line(self, line: str):
         args = self.shlex_split(line)
         if not args:
             return None
-        cmd_name = args[0]
-        if len(args) == 1:
-            cmd_args = []
-        else:
-            cmd_args = args[1:]
+        cmd_name, cmd_args = self.fetch_name_and_args(splitted=args)
 
-        if "--help" in args:
-            return "Help placeholder..." #TODO: --help keys
+        return cmd_name, cmd_args
+
+    def execute_command(self, line: str):
+        parsed = self.parse_line(line)
+        if not parsed:
+            return None
+
+        cmd_name, cmd_args = parsed
+
 
         cmd_meta = self.cmd_map.get(cmd_name)
         if not cmd_meta:
             utils.write_history(line)
-            utils.log_error(f"{args[0]}: command not found", self.logger)
+            utils.log_error(f"{cmd_name}: command not found", self.logger)
             return None
 
         self.logger.info(line)
         cmd_obj = cmd_meta.cmd(args = cmd_args)
         cmd_obj.history()
+
+        if "--help" in cmd_args:
+            return cmd_obj.help() #TODO: --help keys
+
         try:
             return cmd_obj.handled_run()
         except HANDLED_ERRORS as e:

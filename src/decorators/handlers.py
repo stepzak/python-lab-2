@@ -1,9 +1,8 @@
 import inspect
 from functools import wraps
-
+import src.constants as cst
+from src.extra.formatter import formatter
 from src.extra.utils import raise_on_strict
-
-HANDLED_ERRORS = (FileNotFoundError, PermissionError, UnicodeDecodeError)
 
 def get_cls_caller(func):
     @wraps(func)
@@ -25,22 +24,7 @@ def get_cls_caller(func):
         return func(self, *args, requires_self = requires_self, **kwargs)
     return wrapper
 
-def handle_not_found(func):
-    @wraps(func)
-    @get_cls_caller
-    def wrapper(self, *args, requires_self: bool = True, **kwargs):
-        try:
-            if requires_self:
-                return func(self,  *args, **kwargs)
-            else:
-                return func(*args, **kwargs)
-        except FileNotFoundError as e:
-            exc = FileNotFoundError(f"No such file or directory: {e.filename}")
-            raise_on_strict(self.logger, exc, requires_self)
-            return None
-    return wrapper
-
-def handle_permission_denied(func):
+def handle_all_default(func):
     @wraps(func)
     @get_cls_caller
     def wrapper(self, *args, requires_self: bool = True, **kwargs):
@@ -49,22 +33,11 @@ def handle_permission_denied(func):
                 return func(self, *args, **kwargs)
             else:
                 return func(*args, **kwargs)
-        except PermissionError as e:
-
-            exc = PermissionError(f"{e.filename}: permission denied")
+        except tuple(cst.ERROR_HANDLERS_MESSAGES_FORMATS.keys()) as e:
+            e_type = type(e)
+            err_msg_format = cst.ERROR_HANDLERS_MESSAGES_FORMATS[e_type]
+            err_msg = formatter(e, err_msg_format)
+            exc = e_type(err_msg)
             raise_on_strict(self.logger, exc, requires_self)
-            return None
 
-    return wrapper
-
-def handle_all_default(func):
-    @wraps(func)
-    @handle_permission_denied
-    @handle_not_found
-    @get_cls_caller
-    def wrapper(self, *args, requires_self: bool = True, **kwargs):
-        if requires_self:
-            return func(self, *args, **kwargs)
-        else:
-            return func(*args, **kwargs)
     return wrapper

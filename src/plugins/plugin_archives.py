@@ -20,12 +20,12 @@ class UnpackCommand(ExecutableCommand):
 
     @handlers.handle_all_default
     def execute(self):
+        ext = "." + cst.TYPE_EXTENSION_ENUM[self.archive_type]
+        if len(self.args)==1:
+            self.args.append(self.args[0][:-len(ext)])
         if len(self.args)!=2:
-            self._log_error(f"{self.name} command requires exactly 2 arguments. Given: {len(self.args)}")
+            self._log_error(f"{self.name} command requires exactly at least 2 arguments. Given: {len(self.args)}")
             return None
-
-        ext = "."+cst.TYPE_EXTENSION_ENUM[self.archive_type]
-
         if not self.args[0].endswith(ext):
             self._log_error(f"{self.name} command requires {ext} extension. Given: {self.args[0]}")
             return None
@@ -60,13 +60,17 @@ class PackCommand(ExecutableCommand):
     @handlers.handle_all_default
     def execute(self):
 
+        ext = "." + cst.TYPE_EXTENSION_ENUM[self.archive_type]
+        if len(self.args) == 1:
+            self.args.append(self.args[0]+ext)
+
         if len(self.args)!=2:
-            self._log_error(f"{self.name} command requires exactly 2 arguments. Given: {len(self.args)}")
+            self._log_error(f"{self.name} command requires at leat 1 argument. Given: {len(self.args)}")
             return None
 
-        ext = cst.TYPE_EXTENSION_ENUM[self.archive_type]
-        if not self.args[1].endswith(f".{ext}"):
-            self._log_error(f"{self.name} command requires .{ext} extension. Given: {self.args[1]}")
+
+        if not self.args[1].endswith(f"{ext}"):
+            self._log_error(f"{self.name} command requires {ext} extension. Given: {self.args[1]}")
             return None
 
         source = create_path_obj(self.args[0])

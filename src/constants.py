@@ -1,5 +1,6 @@
 import logging
 from pathlib import Path
+from src.cmd_types.formats import ErrFormat, Attribute
 
 LOG_FILE: str = "/var/log/python-lab-2/shell.log"
 FORMAT: str = '[%(asctime)s] %(message)s'
@@ -19,3 +20,22 @@ TYPE_EXTENSION_ENUM: dict[str, str] = {
             "gztar": "tar.gz",
             "zip": "zip"
         }
+
+ERROR_HANDLERS_MESSAGES_FORMATS: dict[type[Exception], ErrFormat] = {
+    FileNotFoundError: ErrFormat(
+        format_str = "{0}: no such file or directory",
+        attrs = [
+            Attribute("filename", [])
+        ]
+    ),
+    PermissionError: ErrFormat(
+        format_str = "{0}: permission denied",
+        attrs = [
+            Attribute("filename", [])
+        ]
+    ),
+    UnicodeDecodeError: ErrFormat(
+        format_str = "unicode decoding error",
+        attrs = []
+    )
+}
