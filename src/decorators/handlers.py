@@ -1,7 +1,9 @@
 import inspect
 from functools import wraps
 
-from src.extra.utils import log_error
+from src.extra.utils import raise_on_strict
+
+HANDLED_ERRORS = (FileNotFoundError, PermissionError, UnicodeDecodeError)
 
 def get_cls_caller(func):
     @wraps(func)
@@ -33,7 +35,8 @@ def handle_not_found(func):
             else:
                 return func(*args, **kwargs)
         except FileNotFoundError as e:
-            log_error(f"No such file or directory: {e.filename}", self.logger)
+            exc = FileNotFoundError(f"No such file or directory: {e.filename}")
+            raise_on_strict(self.logger, exc, requires_self)
             return None
     return wrapper
 
@@ -47,7 +50,9 @@ def handle_permission_denied(func):
             else:
                 return func(*args, **kwargs)
         except PermissionError as e:
-            log_error(f"{e.filename}: permission denied", self.logger)
+
+            exc = PermissionError(f"{e.filename}: permission denied")
+            raise_on_strict(self.logger, exc, requires_self)
             return None
 
     return wrapper

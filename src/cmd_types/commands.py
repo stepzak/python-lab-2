@@ -1,6 +1,8 @@
 import inspect
 import logging
 from abc import ABC, abstractmethod
+
+from src.decorators import handlers
 from src.extra import utils
 import src.decorators.commands_register as cmd_register
 
@@ -69,6 +71,10 @@ class ExecutableCommand(ABC):
             output += out[0] + " " * (max_len - len(out[0])) + 2 * "\t" + out[1] + "\n"
 
         return output
+
+    @handlers.handle_all_default
+    def handled_run(self):
+        return self.execute()
 
     def history(self):
         """Write to history"""

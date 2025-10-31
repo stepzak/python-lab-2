@@ -44,3 +44,8 @@ def get_terminal_dimensions():
         return size.columns, size.lines
     except OSError:
         return 80, 24
+
+def raise_on_strict(logger, exc, strict: bool = False):
+    if strict:
+        raise exc
+    log_error(str(exc), logger)

@@ -87,7 +87,6 @@ class LsCommand(cmds.ExecutableCommand):
         for arg in paths:
             add = list_dir(arg)
             if add:
-
                 out = out + add
 
         return out.strip()
@@ -111,7 +110,6 @@ class CdCommand(cmds.ExecutableCommand):
 
         return path_obj, len(args)
 
-    @handlers.handle_all_default
     def execute(self):
         path, n_args = self._parse_args()
         if n_args>1:
@@ -139,7 +137,6 @@ class CatCommand(cmds.ExecutableCommand):
             ret.append(create_path_obj(arg, must_exist=False))
         return ret
 
-    @handlers.handle_all_default
     def execute(self):
         paths = self._parse_args()
         output = ""
@@ -219,7 +216,7 @@ class MoveCommand(cmds.ExecutableCommand):
 
         return source_dirs, to_dir
 
-    @handlers.handle_all_default
+
     def execute(self):
         source_dirs, to_dir = self._parse_args()
         for source_dir in source_dirs:
@@ -343,7 +340,6 @@ class GrepCommand(cmds.ExecutableCommand):
             flags["-i"] = flags["-r"] = True
         return f, self.args[0], flags
 
-    @handlers.handle_all_default
     def execute(self):
         path_arg, regexp, flags = self._parse_args()
         flags_re = 0
@@ -383,7 +379,6 @@ class HistoryCommand(cmds.ExecutableCommand):
                 self._log_error(f"{self.args[0]} is not an integer")
         return None
 
-    @handlers.handle_all_default
     def execute(self):
         n = self._parse_args()
         with open(cst.HISTORY_PATH, "r") as file:

@@ -5,8 +5,10 @@ import readline #type: ignore
 from pathlib import Path
 import src.constants as cst
 from src.cmd_types.meta import CommandMetadata
+from src.decorators.handlers import HANDLED_ERRORS
 from src.extra import utils
 from src.extra.plugins_loader import PluginLoader
+from src.extra.utils import log_error
 from src.plugins.plugin_default import LsCommand
 
 
@@ -70,6 +72,8 @@ class CommandLineSession:
         self.cmd_map = plugins_loader.commands
         #self.cmd_map["reload-plugins"] = CommandMetadata("reload-plugins", "default_plugin", "default", "1.0.0", ReloadPluginsCommand)
 
+
+
     def execute_command(self, line: str):
         args = self.shlex_split(line)
         if not args:
@@ -92,4 +96,7 @@ class CommandLineSession:
         self.logger.info(line)
         cmd_obj = cmd_meta.cmd(args = cmd_args)
         cmd_obj.history()
-        return cmd_obj.execute()
+        try:
+            return cmd_obj.handled_run()
+        except HANDLED_ERRORS as e:
+            log_error(f"{cmd_name}: {str(e)}", self.logger)
