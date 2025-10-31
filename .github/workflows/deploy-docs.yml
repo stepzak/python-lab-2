@@ -22,7 +22,7 @@ jobs:
         run: pip install pdoc
 
       - name: Build documentation
-        run: pdoc --html --output-dir _site/ src/
+        run: pdoc -o _site/ src/
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
