@@ -1,3 +1,4 @@
+"""Plugin to work with archives"""
 import shutil
 from pathlib import Path
 from typing import Literal
@@ -10,10 +11,14 @@ import src.constants as cst
 __author__ = "default"
 __version__ = "1.0.0"
 
+TYPES = tuple(cst.TYPE_EXTENSION_ENUM.keys())
 
 class UnpackCommand(ExecutableCommand):
-
+    """
+    Command class to unpack archives
+    """
     archive_type: str
+    """type of archive"""
 
     def _parse_args(self) -> tuple[str, str]:
         return self.args[0], self.args[1]
@@ -39,6 +44,7 @@ class UnpackCommand(ExecutableCommand):
 
 
 class PackCommand(ExecutableCommand):
+    """Command to pack archives"""
 
     archive_type: Literal["gztar", "zip"]
 

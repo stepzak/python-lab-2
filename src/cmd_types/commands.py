@@ -1,4 +1,4 @@
-"""Commands abstract classes defined here."""
+"""Commands abstract classes defined here. You may register your own(see plugins.plugin_archives)"""
 
 import inspect
 import logging

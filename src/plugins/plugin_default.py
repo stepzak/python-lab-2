@@ -1,3 +1,4 @@
+"""Default commands: ls, cat, cd, cp, mv, rm, grep, history, undo, exit"""
 import grp
 import inspect
 import os

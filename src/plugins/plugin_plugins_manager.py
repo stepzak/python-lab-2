@@ -1,3 +1,4 @@
+"""Plugin to manage plugins"""
 import inspect
 from src.cmd_types.commands import ExecutableCommand
 from src.decorators import commands_register as cmd_register

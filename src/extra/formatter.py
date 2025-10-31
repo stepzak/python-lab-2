@@ -2,6 +2,14 @@ from src.cmd_types.formats import ErrFormat
 
 
 def formatter(exc, form: ErrFormat) -> str:
+    """
+    Formats error message
+    :param exc: exception where to seek for attributes
+    :type exc: Exception
+
+    :param form: format of error message
+    :return:
+    """
     str_format = form.format_str
     attrs = form.attrs
     if attrs:

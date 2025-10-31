@@ -1,4 +1,4 @@
-""""""
+"""Defines custom exception handlers"""
 import inspect
 from functools import wraps
 import src.constants as cst
@@ -6,6 +6,11 @@ from src.extra.formatter import formatter
 from src.extra.utils import raise_on_strict
 
 def get_cls_caller(func):
+    """
+    Gets initial caller of the decorated function. Caller is identified by logger attribute availability
+    :param func: decorated function
+    :return:
+    """
     @wraps(func)
     def wrapper(self = None, *args, **kwargs):
         requires_self = True
@@ -26,6 +31,7 @@ def get_cls_caller(func):
     return wrapper
 
 def handle_all_default(func):
+    """Converts default exceptions to custom ones. Will raise an exception, if initial caller is class, not a function"""
     @wraps(func)
     @get_cls_caller
     def wrapper(self, *args, requires_self: bool = True, **kwargs):

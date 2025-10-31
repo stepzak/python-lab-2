@@ -1,3 +1,7 @@
+"""
+Loads all plugins
+"""
+
 import importlib
 import inspect
 import logging
@@ -14,14 +18,33 @@ from src.cmd_types.plugins import PluginMetadata
 RESTRICTED = (ExecutableCommand, UndoableCommand)
 
 class PluginLoader:
+    """
+    Class to load plugins
+
+    :param pkg_dir: dir with plugins
+    :type pkg_dir: str
+
+    :param prefix: prefix of plugins files
+    :type prefix: str
+
+    :param strict: Whether raise an error on import or not
+    :type strict: bool
+
+    :raise ImportError: if plugin cannot be loaded. Rather the command was already loaded or plugins has some errors on import
+
+    """
     def __init__(self, pkg_dir: str = cst.PLUGINS_DIR, prefix: str = cst.PLUGINS_PREFIX, strict: bool = cst.STRICT_PLUGIN_LOADING):
         self.pkg_dir = pkg_dir
         self.prefix = prefix
         self.logger = logging.Logger(__name__)
+
         self.commands: dict[str, CommandMetadata] = {}
+        """dict of loaded commands"""
+
         self.strict = strict
         self.__init_logger()
         self.non_default: dict[str, PluginMetadata] = {}
+        """dict of non-default plugins(will be loaded only after default ones)"""
 
     def __init_logger(self):
         handlers = [
@@ -35,6 +58,10 @@ class PluginLoader:
         self.logger.setLevel(cst.LOGGING_LEVEL)
 
     def load_plugins(self):
+        """
+        Loads all plugins
+        :return:
+        """
         plugins_pkg = importlib.import_module(self.pkg_dir)
         for importer, module_name, is_pkg in pkgutil.iter_modules(plugins_pkg.__path__):
             if module_name.startswith(self.prefix) and not is_pkg:
@@ -43,6 +70,11 @@ class PluginLoader:
             self._load_module(k, False)
 
     def warn_or_error(self, *, warn_msg: str = "", exc: Any = ImportError):
+        """
+        Will warn if strict set to False else will raise given exception
+        :param warn_msg: message for warning
+        :param exc: exception to raise
+        """
         if not self.strict:
             self.logger.warning(warn_msg)
 
@@ -51,6 +83,12 @@ class PluginLoader:
 
 
     def _load_module(self, module_name: str, defaults: bool = True):
+        """
+        Imports one module.
+        :param module_name: name of the module to import
+        :param defaults: if set to True, will only load if it is non-default. Otherwise, will load commands from self.non_default
+        :return:
+        """
         full_module_name = defaults * f'{self.pkg_dir}.' + f"{module_name}"
         if defaults:
             try:
