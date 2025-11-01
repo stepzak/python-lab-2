@@ -147,6 +147,11 @@ class CommandLineSession:
             return None
 
         cmd_name, cmd_args = parsed
+        if cmd_name == "help":
+            out = ""
+            for cmd in sorted(self.cmd_map.keys()):
+                out+=f"{cmd}\n"
+            return out
 
 
         cmd_meta = self.cmd_map.get(cmd_name)

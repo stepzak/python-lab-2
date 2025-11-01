@@ -460,8 +460,8 @@ class ExitCommand(cmds.ExecutableCommand):
 
     def execute(self):
         code = self._parse_args()
+        if code:
+            shutil.rmtree(cst.TRASH_PATH)
+            cst.TRASH_PATH.mkdir(parents=True, exist_ok=True)
 
-        shutil.rmtree(cst.TRASH_PATH)
-        cst.TRASH_PATH.mkdir(parents=True, exist_ok=True)
-
-        return exit(code)
+            return exit(code)
