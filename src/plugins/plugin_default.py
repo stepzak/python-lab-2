@@ -299,9 +299,6 @@ class RemoveCommand(cmds.UndoableCommand):
             if not to_move.exists():
                 to_move.mkdir(parents=True)
 
-            else:
-                to_move = Path(cst.TRASH_PATH)
-
             if path.is_dir():
                 if not r_flag and any(path.iterdir()):
                     self._log_error(f"-r option was not specified: '{path}' is ignored")
@@ -435,6 +432,8 @@ class UndoCommand(cmds.ExecutableCommand):
             if name in undoable:
                 try:
                     args = caller.shlex_split(hist)[1:]
+                    if "--help" in args:
+                        continue
                     cmd = caller.cmd_map[name].cmd(args)
                     cmd.undo()
                     num_to_delete = num
@@ -460,8 +459,9 @@ class ExitCommand(cmds.ExecutableCommand):
 
     def execute(self):
         code = self._parse_args()
-        if code:
+        if code is not None:
             shutil.rmtree(cst.TRASH_PATH)
             cst.TRASH_PATH.mkdir(parents=True, exist_ok=True)
+
 
             return exit(code)
