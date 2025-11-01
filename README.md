@@ -31,7 +31,7 @@
 
 ### Установить репозиторий
 ```pip install -e git+https://github.com/stepzak/python-lab-2#egg=python-lab-2``` \
-```cd src/python-lab-2``
+```cd src/python-lab-2```
 
 ### Запустить
 ```python -m src.main```
