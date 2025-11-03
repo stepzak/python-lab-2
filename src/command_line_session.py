@@ -5,6 +5,7 @@ import readline #type: ignore
 from pathlib import Path
 import src.constants as cst
 from src.cmd_types.meta import CommandMetadata
+from src.cmd_types.output import CommandOutput
 from src.extra import utils
 from src.extra.plugins_loader import PluginLoader
 from src.extra.utils import log_error
@@ -159,7 +160,7 @@ class CommandLineSession:
             out = ""
             for cmd in sorted(self.cmd_map.keys()):
                 out+=f"{cmd}\n"
-            return out
+            return CommandOutput(stdout=out)
 
 
         cmd_meta = self.cmd_map.get(cmd_name)
