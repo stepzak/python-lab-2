@@ -5,6 +5,7 @@ from typing import Literal
 import src.decorators.commands_register as cmd_register
 import src.decorators.handlers as handlers
 from src.cmd_types.commands import ExecutableCommand
+from src.cmd_types.output import CommandOutput
 from src.extra.utils import create_path_obj
 import src.constants as cst
 
@@ -61,7 +62,8 @@ class PackCommand(ExecutableCommand):
         try:
             shutil.make_archive(destination, archive_type, source)
         except NotADirectoryError:
-            self._log_error(f"not a directory: {source}")
+            msg = f"not a directory: {source}"
+            return CommandOutput(stderr = msg, errcode = 2)
 
     @handlers.handle_all_default
     def execute(self):
@@ -71,13 +73,13 @@ class PackCommand(ExecutableCommand):
             self.args.append(self.args[0]+ext)
 
         if len(self.args)!=2:
-            self._log_error(f"{self.name} command requires at leat 1 argument. Given: {len(self.args)}")
-            return None
+            msg = f"{self.name} command requires at leat 1 argument. Given: {len(self.args)}"
+            return CommandOutput(stderr = msg, errcode = 2)
 
 
         if not self.args[1].endswith(f"{ext}"):
-            self._log_error(f"{self.name} command requires {ext} extension. Given: {self.args[1]}")
-            return None
+            msg = f"{self.name} command requires {ext} extension. Given: {self.args[1]}"
+            return CommandOutput(stderr= msg, errcode=2)
 
         source = create_path_obj(self.args[0])
 

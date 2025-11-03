@@ -85,8 +85,16 @@ class CommandLineSession:
             try:
                 res = self.execute_command(cmd)
                 if res:
-                    print(res)
-
+                    res = res.strip()
+                    if res.stderr:
+                        errs = res.stderr.split("\n")
+                        for err in errs:
+                            if not err:
+                                continue
+                            cmd_name = self.parse_line(cmd)[0]
+                            log_error(f"{cmd_name}: {err}", self.logger)
+                    if res.stdout:
+                        print(res.stdout)
             except ImportError:
                 raise
 

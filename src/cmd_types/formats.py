@@ -21,3 +21,6 @@ class ErrFormat:
 
     attrs: list[Attribute]
     """List of attributes to format string with"""
+
+    errcode: int = 1
+    """Error code"""

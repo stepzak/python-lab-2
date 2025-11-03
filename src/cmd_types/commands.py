@@ -4,6 +4,7 @@ import inspect
 import logging
 from abc import ABC, abstractmethod
 
+from src.cmd_types.output import CommandOutput
 from src.decorators import handlers
 from src.extra import utils
 import src.decorators.commands_register as cmd_register
@@ -74,7 +75,7 @@ class ExecutableCommand(ABC):
         """Parses command line arguments"""
 
     @abstractmethod
-    def execute(self):
+    def execute(self) -> CommandOutput:
         """Executes command"""
 
     @cmd_register.display_in_help("--help")
@@ -95,16 +96,16 @@ class ExecutableCommand(ABC):
         for out in outs:
             output += out[0] + " " * (max_len - len(out[0])) + 2 * "\t" + out[1] + "\n"
 
-        return output
+        return CommandOutput(stdout = output)
 
     @handlers.handle_all_default
-    def handled_run(self) -> str:
+    def handled_run(self) -> CommandOutput:
         """
         Runs a command with exception handlers, registered by default.
         You may create your own abstract class with this method overriden
 
         :return: command execution result
-        :rtype: str
+        :rtype: CommandOutput
         """
         return self.execute()
 

@@ -26,16 +26,19 @@ ERROR_HANDLERS_MESSAGES_FORMATS: dict[type[Exception], ErrFormat] = {
         format_str = "{0}: no such file or directory",
         attrs = [
             Attribute("filename", [])
-        ]
+        ],
+        errcode = 2
     ),
     PermissionError: ErrFormat(
         format_str = "{0}: permission denied",
         attrs = [
             Attribute("filename", [])
-        ]
+        ],
+        errcode = 1
     ),
     UnicodeDecodeError: ErrFormat(
         format_str = "unicode decoding error",
-        attrs = []
+        attrs = [],
+        errcode = 3
     )
 }

@@ -1,6 +1,7 @@
 """Plugin to manage plugins"""
 import inspect
 from src.cmd_types.commands import ExecutableCommand
+from src.cmd_types.output import CommandOutput
 from src.decorators import commands_register as cmd_register
 
 __author__ = "default"
@@ -46,5 +47,5 @@ class PluginsCommand(ExecutableCommand):
         if getattr(f, "__display_help__", False):
             return f(strict)
 
-        self._log_error(f"Unknown action: {action}")
-        return None
+        msg = f"Unknown action: {action}"
+        return CommandOutput(stderr=msg, errcode=1)

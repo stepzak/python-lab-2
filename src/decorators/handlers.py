@@ -2,8 +2,8 @@
 import inspect
 from functools import wraps
 import src.constants as cst
+from src.cmd_types.output import CommandOutput
 from src.extra.formatter import formatter
-from src.extra.utils import raise_on_strict
 
 def get_cls_caller(func):
     """
@@ -44,7 +44,9 @@ def handle_all_default(func):
             e_type = type(e)
             err_msg_format = cst.ERROR_HANDLERS_MESSAGES_FORMATS[e_type]
             err_msg = formatter(e, err_msg_format)
-            exc = e_type(err_msg)
-            raise_on_strict(self.logger, exc, requires_self)
+            return CommandOutput(
+                stderr = err_msg+"\n",
+                errcode = err_msg_format.errcode
+            )
 
     return wrapper

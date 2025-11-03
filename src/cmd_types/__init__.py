@@ -6,4 +6,5 @@ Submodules:
  - formats: Definition of formatted strings dataclasses
  - meta: Definition of metadata dataclasses
  - plugins: Definition of plugins dataclasses
+ - output: Definition of command output dataclass
 """
